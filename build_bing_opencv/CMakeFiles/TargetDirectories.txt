@@ -1,0 +1,3 @@
+/Users/sepehrakbari/Projects/Paintings100/build_bing_opencv/CMakeFiles/PaintingCropperBING.dir
+/Users/sepehrakbari/Projects/Paintings100/build_bing_opencv/CMakeFiles/edit_cache.dir
+/Users/sepehrakbari/Projects/Paintings100/build_bing_opencv/CMakeFiles/rebuild_cache.dir

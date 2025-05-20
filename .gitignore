@@ -1,3 +1,11 @@
-images
-output_bing_crops
+.vscode
 venv
+
+images
+
+method_BING/build/CMakeFiles
+method_BING/build/cmake_install.cmake
+method_BING/build/CMakeCache.txt
+method_BING/build/Makefile
+method_BING/build/PaintingCropperBING
+method_BING/output/bing_crops

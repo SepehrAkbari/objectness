@@ -19,7 +19,7 @@ struct CropInfo {
 };
 
 int main(int argc, char** argv) {
-    std::string images_path = "../../images";
+    std::string images_path = "../../images/paintings";
     std::string output_base_path = "../output";
     std::string output_crops_path = output_base_path + "/bing_crops";
     std::string output_csv_path = output_base_path + "/bing_crops.csv";

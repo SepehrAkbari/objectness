@@ -35,4 +35,12 @@ After the build is complete, you can run the BING method on images using the fol
 ./CropperBING
 ```
 
-The results will be saved in the `output` directory.
+This will produce a folder containing crops of the identified objects in the images, along with a CSV file with their coordinates. The results will be saved in the `output` directory.
+
+**Notes**:
+
+1. In `src/bing_cropper.cpp`, you can change the `images_path` to match your images directory.
+
+2. This module returns a fixed, 15 crops per image. You can change this in the `src/bing_cropper.cpp` file by modifying the parameters on Line 98. The value used is 15, but you can set it to any number you want.
+
+3. `Base`, `W`, and `NSS` were set according to the paper. You can change them in `src/bing_cropper.cpp`, Line 41-43.

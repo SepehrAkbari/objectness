@@ -17,7 +17,7 @@ message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(${PROJECT_NAME} main_cropper.cpp)
+add_executable(${PROJECT_NAME} bing_cropper.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS})
 

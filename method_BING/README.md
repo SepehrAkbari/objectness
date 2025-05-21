@@ -37,7 +37,7 @@ After the build is complete, you can run the BING method on images using the fol
 
 This will produce a folder containing crops of the identified objects in the images, along with a CSV file with their coordinates. The results will be saved in the `output` directory.
 
-**Notes**:
+**Note**:
 
 1. In `src/bing_cropper.cpp`, you can change the `images_path` to match your images directory.
 

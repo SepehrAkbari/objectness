@@ -1,5 +1,7 @@
 .vscode
 venv
+.venv
+venv_main_frcnn
 
 images/paintings
 
@@ -11,3 +13,9 @@ method_BING/build/PaintingCropperBING
 method_BING/output/bing_crops
 
 method_DeepLearning/output/frcnn_crops
+method_DeepLearning/output/frcnn_crops2
+method_DeepLearning/output/log.txt
+
+main/output/*
+main/temp_processing/*
+main/bing_processor/build/*

@@ -37,8 +37,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    score_threshold = 0.3
-    nms_iou_threshold = 0.6
+    score_threshold = 0.5
+    nms_iou_threshold = 0.3
     proposals_num = 15
 
     try:

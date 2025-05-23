@@ -2,5 +2,6 @@ pandas
 numpy
 torch
 torchvision
-# opencv-python
+opencv-python
 Pillow
+urllib3<2.0

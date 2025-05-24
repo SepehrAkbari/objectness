@@ -4,7 +4,7 @@ This part of the project utilizes a pre-trained Faster R-CNN model to detect and
 
 1. **Region Proposal Network (RPN):** 
     * A deep convolutional network first processes the input image to extract rich feature maps.
-    * The RPN then slides small networks over these feature maps to identify and propose candidate bounding boxes that are likely to contain objects. These proposals are class-agnostic at this stage, meaning the RPN suggests regions that look like "objects" in general, without knowing their specific class yet. It also provides an "objectness" score for each proposal.
+    * The RPN then slides small networks over these feature maps to identify and propose candidate bounding boxes that are likely to contain objects. These proposals are class-agnostic at this stage, meaning the RPN suggests regions that look like "objects" in general, without knowing their specific class yet. It also provides an "object-ness" score for each proposal.
 
 2. **Detection Network (using a Faster-RCNN):**
     * The candidate regions proposed by the RPN are then passed to the second stage. For each region, features are pooled from the shared convolutional feature maps.

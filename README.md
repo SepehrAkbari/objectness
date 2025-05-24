@@ -1,12 +1,12 @@
 # Objectness
 
-This repository contains a module for detecting objects in images, and producing context-aware and meaningful crop. The initial problem trying to solve is to generate meaningful image crops for training a neural network for classification, when each class does not have enough images, and augmentation methods are not sufficient or possible.
+This repository contains a module for detecting objects in images, and producing context-aware and meaningful crops. The initial problem trying to solve is to generate meaningful image crops for training a neural network for classification, when each class does not have enough images, and augmentation methods are not sufficient or possible.
 
 In this case, our goal is to classify paintings from 100 different artists and multiple style classes. Each class has only about 30 paintings, and augmentation through rotation, color jittering, etc. is not possible due to the nature of the problem. This module is designed to help produce meaningful crops of the paintings, which can identify the most standout objects in a painting, producing a high quality training set for the neural network to learn contextual information about the style, and the artist themself.
 
 ## Approach
 
-To design this module, we use a combination of two methods to detect objects in images. Both methods would then come be orchestrated by a script to produce the final output. The first method is utilizes a Faster-RCNN model with a Region Proposal Network (RPN) to detect objects through a Non-Maximum Suppression (NMS) algorithm; refer to the [Deep Learning Method](method_DeepLearning) directory for more details. The second method is aspired by the work of Ming-Ming Cheng et al. in their paper [BING: Binarized Normed Gradients for Objectness Estimation at 300fps](https://mmcheng.net/bing/), which introduces a fast and efficient method for object detection using Binarized Normed Gradients (BING). This method is implemented in the [BING Method](method_BING) directory using OpenCV's `saliency` module.
+To design this module, we use a combination of two methods to detect objects in images. Both methods would then be orchestrated by a script to produce the final output. The first method is utilizes a Faster-RCNN model with a Region Proposal Network (RPN) to detect objects through a Non-Maximum Suppression (NMS) algorithm; refer to the [Deep Learning Method](method_DeepLearning) directory for more details. The second method is aspired by the work of Ming-Ming Cheng et al. in their paper [BING: Binarized Normed Gradients for Objectness Estimation at 300fps](https://mmcheng.net/bing/), which introduces a fast and efficient method for object detection using Binarized Normed Gradients (BING). This method is implemented in the [BING Method](method_BING) directory using OpenCV's `saliency` module.
 
 ## Usage
 

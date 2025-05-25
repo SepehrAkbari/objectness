@@ -15,33 +15,31 @@ import (
 
 const totalCropsPerPainting = 20
 
-// Config (adjust paths as needed, relative to where orchestrator.go is compiled and run from, i.e., main/)
 var (
-	paintingsDir = "../images/paintings" // Relative to main/
-	bingProcessorDir         = "./bing_processor"
-	frcnnProcessorDir        = "./frcnn_processor"
-	bingExecutablePath       = filepath.Join(bingProcessorDir, "build", "BingCropperSingle") // Ensure this name matches CMake output
-	frcnnScriptPath          = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
-	frcnnPythonVenvPath      = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python") // Adjust if venv structure/name differs
-	finalOutputDir           = "./output"
-	finalCropsDir            = filepath.Join(finalOutputDir, "crops")
-	finalCSVFile             = filepath.Join(finalOutputDir, "combined_data.csv")
-	tempProcessingBaseDir    = "./temp_processing"
+	paintingsDir = "../images/paintings"
+	bingProcessorDir = "./bing_processor"
+	frcnnProcessorDir = "./frcnn_processor"
+	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
+	frcnnScriptPath = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
+	frcnnPythonVenvPath = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python")
+	finalOutputDir = "./output"
+	finalCropsDir = filepath.Join(finalOutputDir, "crops")
+	finalCSVFile = filepath.Join(finalOutputDir, "combined_data.csv")
+	tempProcessingBaseDir = "./temp_processing"
 )
 
 type CropMeta struct {
 	RelativeCropPath string
-	X                int
-	Y                int
-	Width            int
-	Height           int
-	Score            float64 // Only for FRCNN
+	X int
+	Y int
+	Width int
+	Height int
+	Score float64
 }
 
 func main() {
 	log.Println("Orchestrator (Go): Starting...")
 
-	// Setup output directories
 	if err := os.MkdirAll(finalCropsDir, 0755); err != nil {
 		log.Fatalf("Error creating final crops directory: %v", err)
 	}
@@ -49,7 +47,6 @@ func main() {
 		log.Fatalf("Error creating temp base directory: %v", err)
 	}
 
-	// Initialize final CSV
 	csvFile, err := os.Create(finalCSVFile)
 	if err != nil {
 		log.Fatalf("Error creating final CSV file: %v", err)
@@ -60,7 +57,7 @@ func main() {
 	if err := csvWriter.Write(header); err != nil {
 		log.Fatalf("Error writing CSV header: %v", err)
 	}
-	csvWriter.Flush() // Write header immediately
+	csvWriter.Flush() 
 
 	log.Printf("Orchestrator: Processing paintings from %s\n", paintingsDir)
 	entries, err := os.ReadDir(paintingsDir)
@@ -86,24 +83,25 @@ func main() {
 			log.Printf("  Error creating temp dir for %s: %v. Skipping.\n", paintingFilename, err)
 			continue
 		}
-		defer os.RemoveAll(currentTempDir) // Cleanup temp dir for this image
+		defer os.RemoveAll(currentTempDir)
 
 		isWrongFile := "FALSE"
 		if strings.Contains(strings.ToUpper(paintingFilename), "_WRONG") {
 			isWrongFile = "TRUE"
 		}
 
-		// 1. Run FRCNN
+		// FRCNN PART
+
 		log.Printf("  Orchestrator: Running FRCNN for %s...\n", paintingFilename)
 		cmdFRCNN := exec.Command(frcnnPythonVenvPath, frcnnScriptPath, paintingPath, currentTempDir)
-		frcnnStdOut, err := cmdFRCNN.Output() // Captures standard output
+		frcnnStdOut, err := cmdFRCNN.Output()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {
 				log.Printf("  FRCNN script for %s exited with error: %v. Stderr: %s\n", paintingFilename, err, string(exitErr.Stderr))
 			} else {
 				log.Printf("  Error running FRCNN script for %s: %v\n", paintingFilename, err)
 			}
-			frcnnStdOut = []byte("0") // Assume 0 proposals on error
+			frcnnStdOut = []byte("0")
 		}
 
 		numFRCNNProposals, convErr := strconv.Atoi(strings.TrimSpace(string(frcnnStdOut)))
@@ -115,7 +113,6 @@ func main() {
 
 		finalCropIdxCounter := 0
 
-		// Consolidate FRCNN results
 		numToTakeFromFRCNN := 0
 		if numFRCNNProposals >= totalCropsPerPainting {
 			numToTakeFromFRCNN = totalCropsPerPainting
@@ -130,8 +127,6 @@ func main() {
 			if err != nil {
 				log.Printf("  Warning: Could not read FRCNN meta CSV for %s: %v. Skipping FRCNN crops.\n", paintingFilename, err)
 			} else {
-				// FRCNN script should ideally output sorted by score.
-				// Here we just take the top N as they appear in its meta file.
 				for i := 0; i < len(frcnnCrops) && i < numToTakeFromFRCNN; i++ {
 					crop := frcnnCrops[i]
 					if err := processAndSaveCrop(paintingFilename, finalCropIdxCounter, isWrongFile, crop, currentTempDir, "TRUE", "FALSE", csvWriter); err == nil {
@@ -143,9 +138,9 @@ func main() {
 		csvWriter.Flush()
 
 
-		// 2. Determine BING's task and Run BING if needed
+		// BING PART
 		numBingNeeded := totalCropsPerPainting - finalCropIdxCounter
-		if numBingNeeded < 0 { // Should not happen if FRCNN logic is correct
+		if numBingNeeded < 0 {
 			numBingNeeded = 0
 		}
 
@@ -161,22 +156,18 @@ func main() {
 
 			log.Printf("  Orchestrator: Executing BING: %s in CWD: %s\n", strings.Join(cmdBING.Args, " "), cmdBING.Dir)
 
-			bingCombinedOutput, err := cmdBING.CombinedOutput() // Captures both stdout and stderr
+			bingCombinedOutput, err := cmdBING.CombinedOutput()
             
-            // ALWAYS LOG BING'S OUTPUT for diagnosis
             log.Printf("  Raw BING Process Output for %s (length %d):\n---BEGIN BING STDERR/STDOUT---\n%s\n---END BING STDERR/STDOUT---\n", 
                         paintingFilename, len(bingCombinedOutput), string(bingCombinedOutput))
 
 			if err != nil {
-				// This log might now be redundant if the raw output above shows the error details
 				log.Printf("  Error status from BING executable for %s: %v.\n", paintingFilename, err)
 			}
             // else if len(bingCombinedOutput) == 0 {
 			// 	log.Printf("  BING Process for %s produced no output to stdout/stderr but exited successfully.\n", paintingFilename)
 			// }
 
-
-			// Now, proceed to check the bing_meta.csv file as before
 			bingMetaPath := filepath.Join(currentTempDir, "bing_meta.csv") 
 			if _, statErr := os.Stat(bingMetaPath); os.IsNotExist(statErr) {
 				log.Printf("  Warning: BING meta file NOT FOUND for %s at %s (BING might have failed before creating it or crashed)\n", paintingFilename, bingMetaPath)
@@ -217,9 +208,9 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	_, err = reader.Read() // Skip header
+	_, err = reader.Read()
 	if err == io.EOF {
-		return []CropMeta{}, nil // Empty file after header
+		return []CropMeta{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read header from %s: %w", filePath, err)
@@ -232,7 +223,6 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 			break
 		}
 		if err != nil {
-			// Log malformed line and continue if possible
 			log.Printf("Warning: Malformed line in %s: %v (line: %s)", filePath, err, strings.Join(record, ","))
 			continue
 		}
@@ -270,7 +260,6 @@ func processAndSaveCrop(
 	sourceCropPath := filepath.Join(tempBaseDir, meta.RelativeCropPath)
 	destCropPath := filepath.Join(finalCropsDir, finalCropFilename)
 
-	// Copy the crop file
 	sourceFile, err := os.Open(sourceCropPath)
 	if err != nil {
 		log.Printf("  Error opening source crop %s: %v\n", sourceCropPath, err)
@@ -291,18 +280,16 @@ func processAndSaveCrop(
 		return err
 	}
 
-	// Write to final CSV
-	// tl_x,tl_y, tr_x,tr_y, bl_x,bl_y, br_x,br_y
 	x1, y1 := meta.X, meta.Y
 	x2, y2 := meta.X+meta.Width, meta.Y+meta.Height
 	
 	csvRecord := []string{
 		originalFilename,
 		strconv.Itoa(cropIdx),
-		strconv.Itoa(x1), strconv.Itoa(y1), // top_left
-		strconv.Itoa(x2), strconv.Itoa(y1), // top_right
-		strconv.Itoa(x1), strconv.Itoa(y2), // bottom_left
-		strconv.Itoa(x2), strconv.Itoa(y2), // bottom_right
+		strconv.Itoa(x1), strconv.Itoa(y1),
+		strconv.Itoa(x2), strconv.Itoa(y1),
+		strconv.Itoa(x1), strconv.Itoa(y2),
+		strconv.Itoa(x2), strconv.Itoa(y2),
 		isWrongFile,
 		isFRCNNSource,
 		isBINGSource,

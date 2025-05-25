@@ -2,17 +2,17 @@ import torch
 import torchvision
 from torchvision.models.detection import FasterRCNN_ResNet50_FPN_Weights
 from torchvision import transforms
-import cv2 # OpenCV
+import cv2
 import os
 import pandas as pd
 from PIL import Image
 import argparse
-import sys # For stderr and stdout control
+import sys
 
 def create_output_dirs_if_needed(base_output_path):
     """Creates output directories if they don't exist."""
     crops_path = os.path.join(base_output_path, "crops")
-    if not os.path.exists(base_output_path): # Should be created by orchestrator
+    if not os.path.exists(base_output_path):
         try:
             os.makedirs(base_output_path) 
         except OSError as e:
@@ -37,8 +37,8 @@ def get_faster_rcnn_model(device):
 def main(input_image_path_arg, temp_output_dir_arg):
     output_crops_dir = create_output_dirs_if_needed(temp_output_dir_arg)
     if output_crops_dir is None:
-        print(0) # CRITICAL: Output 0 to stdout for orchestrator
-        sys.exit(1) # Exit with error
+        print(0) 
+        sys.exit(1)
 
     temp_meta_csv_path = os.path.join(temp_output_dir_arg, "frcnn_meta.csv")
 
@@ -46,7 +46,7 @@ def main(input_image_path_arg, temp_output_dir_arg):
     
     score_threshold = 0.5
     nms_iou_threshold = 0.3
-    initial_proposals_limit = 30 # FRCNN can generate more, orchestrator will pick top 20 if needed
+    initial_proposals_limit = 30
 
     try:
         model = get_faster_rcnn_model(device)
@@ -63,7 +63,7 @@ def main(input_image_path_arg, temp_output_dir_arg):
     
     try:
         with open(temp_meta_csv_path, 'w') as meta_file:
-            meta_file.write("relative_crop_path,x,y,width,height,score\n") # Header
+            meta_file.write("relative_crop_path,x,y,width,height,score\n")
 
             try:
                 img_pil = Image.open(input_image_path_arg).convert("RGB")
@@ -93,14 +93,10 @@ def main(input_image_path_arg, temp_output_dir_arg):
 
             if filtered_boxes_tensor.shape[0] == 0:
                 print(0)
-                sys.exit(0) # Normal exit, just no proposals
+                sys.exit(0) 
 
             keep_by_nms_indices = torchvision.ops.nms(filtered_boxes_tensor, filtered_scores_tensor, nms_iou_threshold)
-            
-            # Take top N *after* NMS, sorted by score (NMS output is not guaranteed to be sorted by score,
-            # but the input 'filtered_scores_tensor' was. Typically, nms implementations handle this,
-            # or one might need to re-index scores and sort if taking a subset from NMS output).
-            # For simplicity here, we assume the order from NMS is good enough for 'initial_proposals_limit'.
+
             final_indices_to_consider = keep_by_nms_indices[:initial_proposals_limit]
 
             final_boxes_tensor_cpu = filtered_boxes_tensor[final_indices_to_consider].cpu()
@@ -138,7 +134,7 @@ def main(input_image_path_arg, temp_output_dir_arg):
                 meta_file.write(f"{relative_crop_name},{x1_c},{y1_c},{width},{height},{score:.4f}\n")
                 saved_proposals_count += 1
         
-        print(saved_proposals_count) # CRITICAL: Print actual count to stdout
+        print(saved_proposals_count)
 
     except Exception as e:
         print(f"FRCNN_PY Error processing {image_filename}: {e}", file=sys.stderr)

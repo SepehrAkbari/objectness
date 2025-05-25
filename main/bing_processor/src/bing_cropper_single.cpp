@@ -1,4 +1,3 @@
-// PaintingAnalysis/main/bing_processor/src/bing_cropper_single.cpp
 #include <opencv2/saliency.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -7,8 +6,8 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <algorithm> // For std::min
-#include <filesystem> // Requires C++17
+#include <algorithm>
+#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -27,12 +26,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::string temp_output_dir_str = argv[3];
-
-    // CORRECTED PATH: Relative to the executable in 'build/' directory
     std::string model_base_path = "../src/models/"; 
 
-    // Debugging prints to confirm paths based on actual CWD when run by Go
-    // These std::cerr lines will be captured by Go's CombinedOutput()
     std::filesystem::path currentCWD = fs::current_path();
     std::cerr << "BING_CPP Debug: Current actual CWD: " << currentCWD.string() << std::endl;
     std::cerr << "BING_CPP Debug: Relative model_base_path used: " << model_base_path << std::endl;
@@ -54,8 +49,6 @@ int main(int argc, char** argv) {
     }
     
     std::string temp_meta_csv_path = temp_output_dir_str + "/bing_meta.csv";
-    // std::cerr << "BING_CPP Debug: Temp meta CSV will be at: " << fs::absolute(temp_meta_csv_path).string() << std::endl;
-
 
     cv::Ptr<cv::saliency::ObjectnessBING> bing = cv::saliency::ObjectnessBING::create();
     if (!bing) {
@@ -69,8 +62,6 @@ int main(int argc, char** argv) {
     
     std::cerr << "BING_CPP Debug: Setting training path for OpenCV BING to: " << model_base_path << std::endl;
     try {
-        // OpenCV's setTrainingPath expects a path from which it constructs model filenames.
-        // It needs to find ObjNessB2W8MAXBGR.wS1.yml etc. within this path.
         bing->setTrainingPath(model_base_path); 
     } catch (const cv::Exception& e) {
         std::cerr << "BING_CPP Error: Exception during setTrainingPath: " << e.what() << std::endl;
@@ -90,15 +81,12 @@ int main(int argc, char** argv) {
     std::string image_filename_str = input_fs_path.filename().string();
     std::string base_filename_for_crop = input_fs_path.stem().string();
     
-    // std::cerr << "BING_CPP Info: Processing " << image_filename_str << " for up to " << num_proposals_to_generate << " proposals." << std::endl;
-
     cv::Mat image = cv::imread(input_image_path_str);
     if (image.empty()) {
         std::cerr << "BING_CPP Error: Could not read image: " << input_image_path_str << std::endl;
         meta_file.close();
         return 1; 
     }
-    // std::cerr << "BING_CPP Debug: Image loaded successfully. Rows: " << image.rows << ", Cols: " << image.cols << std::endl;
 
     std::vector<cv::Vec4i> bounding_boxes; 
     bool success = false;

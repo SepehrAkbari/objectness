@@ -30,3 +30,11 @@ python rp_rcnn.py
 ```
 
 The results will be saved in the `output` directory.
+
+**Note**:
+
+1. You can change the threshold for the object-ness score in `rp_rcnn.py`, by changing the value of the `score_threshold` variable. The default value is set to 0.5, but you can adjust it according to your needs.
+
+2. You can also change the value of the `nms_iou_threshold` variable to adjust the Non-Maximum Suppression (NMS) threshold. The default value is set to 0.3, but you can modify it as needed.
+
+3. The number of proposals to be returned can be adjusted by changing the `proposals_num` variable.

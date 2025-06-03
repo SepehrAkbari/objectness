@@ -19,3 +19,6 @@ method_DeepLearning/output/log.txt
 main/output/*
 main/temp_processing/*
 main/bing_processor/build/*
+
+go.mod
+old.go

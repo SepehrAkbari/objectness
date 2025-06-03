@@ -16,7 +16,7 @@ method_DeepLearning/output/frcnn_crops
 method_DeepLearning/output/frcnn_crops2
 method_DeepLearning/output/log.txt
 
-main/output/*
+main/output/crops/
 main/temp_processing/*
 main/bing_processor/build/*
 

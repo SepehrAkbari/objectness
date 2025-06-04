@@ -3,7 +3,7 @@ from skimage import io
 import os
 
 SOURCE_IMAGE_DIR = "../images/paintings/"
-OUTPUT_CROPS_DIR = "output_crops_test/"
+OUTPUT_CROPS_DIR = "output_crops/"
 CSV_FILE_PATH = "output/combined_data.csv"
 
 try:
@@ -54,7 +54,7 @@ def get_source_label(frcnn_source_val, bing_source_val):
     else:
         return "RANDOM"
 
-def main():
+if __name__ == '__main__':
     os.makedirs(OUTPUT_CROPS_DIR, exist_ok=True)
     print(f"Output directory: {os.path.abspath(OUTPUT_CROPS_DIR)}")
 
@@ -92,9 +92,9 @@ def main():
             source_label = get_source_label(row['FRCNN_source'], row['BING_source'])
 
             if last_name:
-                base_output_name = f"{first_name}_{last_name}_{num_str}_{crop_idx}_{source_label}"
+                base_output_name = f"{first_name}_{last_name}_{num_str}_crop{crop_idx+1}_{source_label}"
             else:
-                 base_output_name = f"{first_name}_{num_str}_{crop_idx}_{source_label}"
+                 base_output_name = f"{first_name}_{num_str}_crop{crop_idx+1}_{source_label}"
 
             if str(row['WRONG_file']).upper() == 'TRUE':
                 output_filename = f"{base_output_name}_WRONG.jpg"
@@ -111,7 +111,4 @@ def main():
             except Exception as e:
                 print(f"  Error saving cropped image {output_path}: {e}")
         
-    print(f"\nProcessing complete. Total crops saved: {processed_crops_count}")
-
-if __name__ == '__main__':
-    main()
+    print(f"\nProcessing complete. Total crops saved: {processed_crops_count} / 25")

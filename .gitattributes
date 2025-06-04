@@ -1,3 +1,3 @@
 main/cropper.py linguist-vendored
-main/CMakeLists.txt linguist-language=cpp
+main/bing_processor/src/CMakeLists.txt linguist-language=cpp
 method_BING/src/CMakeLists.txt linguist-language=cpp

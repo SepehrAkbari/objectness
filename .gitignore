@@ -19,6 +19,7 @@ method_DeepLearning/output/log.txt
 main/output/crops/
 main/temp_processing/*
 main/bing_processor/build/*
+main/output_crops_test/
 
 go.mod
 old.go

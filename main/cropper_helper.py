@@ -29,7 +29,6 @@ def parse_filename(original_filename_str):
         num = "0"
         last_name = parts[-1] if len(parts) >=1 else "UNKNOWN"
         first_name = "_".join(parts[:-1]) if len(parts) > 1 else "UNKNOWN"
-
     else: 
         if len(parts) < 2:
              last_name = "UNKNOWN"

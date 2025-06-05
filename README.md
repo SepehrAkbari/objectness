@@ -47,10 +47,10 @@ go build orchestrator.go
 
 This will process the images in the `images` directory and save the output in the `main/output` directory. The output will include crops of the detected objects in the images, and just a few crops of objectless regions, along with a CSV file containing the coordinates of the detected objects, and other relevant information.
 
-Because of hardware limitations, the orchestrator script is designed to be executed in a GPU-enabled environment, since this is usually done on an external machine, you can use the `main/cropper.py` helper script to generate the crops based on the outputted CSV file by the orchestrator on your local machine, which saves significant time since there is no more need to transfer the images back and forth.
+Because of hardware limitations, the orchestrator script is designed to be executed in a GPU-enabled environment, since this is usually done on an external machine, you can use the `main/cropper_helper.py` helper script to generate the crops based on the outputted CSV file by the orchestrator on your local machine, which saves significant time since there is no more need to transfer the images back and forth.
 
 ```bash
-python cropper.py
+python cropper_helper.py
 ```
 
 ## Contributing

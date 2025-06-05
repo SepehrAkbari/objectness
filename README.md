@@ -10,7 +10,7 @@ To design this module, we use a combination of two methods to detect objects in 
 
 ## Usage
 
-To use the module, make sure you have a version of Python 3.8 or higher installed, along with the OpenCV saliency module which is included in their full package.
+To use the module, make sure you have a version of Python 3.8 or higher, Go-lang, and a C compiler installed, along with the OpenCV saliency module which is included in their full package.
 
 First, clone the repository:
 

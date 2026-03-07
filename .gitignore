@@ -4,6 +4,7 @@ venv
 venv_main_frcnn
 
 images/paintings
+images/crops
 
 method_BING/build/CMakeFiles
 method_BING/build/cmake_install.cmake
@@ -27,3 +28,5 @@ cmake_install.cmake
 
 go.mod
 old.go
+
+poster/

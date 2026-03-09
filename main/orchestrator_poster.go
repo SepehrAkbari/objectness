@@ -25,13 +25,13 @@ const lowSaliencyCropTargetWidth = 224
 const lowSaliencyCropTargetHeight = 224
 
 var (
-	paintingsDir = "../images/paintings"
+	paintingsDir = "../images/poster/paintings"
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
 	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
 	frcnnScriptPath = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
 	frcnnPythonVenvPath = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python")
-	finalOutputDir = "./output"
+	finalOutputDir = "./poster_output"
 	finalCropsDir = filepath.Join(finalOutputDir, "crops")
 	finalCSVFile = filepath.Join(finalOutputDir, "combined_data.csv")
 	tempProcessingBaseDir = "./temp_processing"

@@ -5,6 +5,9 @@ venv_main_frcnn
 
 images/paintings
 images/crops
+images/poster/crops.csv
+images/poster/combined_data.csv
+images/poster/cropper_helper.py
 
 method_BING/build/CMakeFiles
 method_BING/build/cmake_install.cmake
@@ -29,4 +32,4 @@ cmake_install.cmake
 go.mod
 old.go
 
-poster/
+_poster/

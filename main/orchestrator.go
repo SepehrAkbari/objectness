@@ -23,7 +23,7 @@ const lowSaliencyCropTargetWidth = 224
 const lowSaliencyCropTargetHeight = 224
 
 var (
-	dataDir = "../data/paintings"
+	dataDir = "../data/testing"
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
 	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")

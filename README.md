@@ -21,7 +21,7 @@ go mod init objectness
 go mod tidy
 ```
 
-Populate the [images](images) directory with your images, following the structure outlined. Then, install the required dependencies:
+Populate the [data](data) directory with your images, following the structure outlined. Then, install the required dependencies:
 
 ```bash
 uv venv
@@ -45,7 +45,7 @@ go build orchestrator.go
 ./orchestrator
 ```
 
-This will process the images in the `images` directory and save the output in the `main/output` directory. The output will include crops of the detected objects in the images, and just a few crops of objectless regions, along with a CSV file containing the coordinates of the detected objects, and other relevant information.
+This will process the images in the `data` directory and save the output in the `main/output` directory. The output will include crops of the detected objects in the images, and just a few crops of objectless regions, along with a CSV file containing the coordinates of the detected objects, and other relevant information.
 
 Because of hardware limitations, the orchestrator script is designed to be executed in a GPU-enabled environment, since this is usually done on an external machine, you can use the `main/cropper_helper.py` helper script to generate the crops based on the outputted CSV file by the orchestrator on your local machine, which saves significant time since there is no more need to transfer the images back and forth.
 

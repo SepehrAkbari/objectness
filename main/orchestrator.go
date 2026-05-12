@@ -368,7 +368,8 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 			crop.Score, _ = strconv.ParseFloat(record[5], 64)
 		}
 		crops = append(crops, crop)
-	}
+	}	
+
 	return crops, nil
 }
 

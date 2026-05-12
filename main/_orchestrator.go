@@ -24,15 +24,14 @@ const lowSaliencyCropTargetHeight = 224
 
 var (
 	dataDir = "../data/testing"
-
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
+	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
 	frcnnScriptPath = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
 	finalOutputDir = "./output"
 	finalCropsDir = filepath.Join(finalOutputDir, "crops")
 	finalCSVFile = filepath.Join(finalOutputDir, "combined_data.csv")
 	tempProcessingBaseDir = "./temp_processing"
-	
 	bingExecutablePath string
 )
 
@@ -319,8 +318,6 @@ func main() {
 		os.RemoveAll(currentTempDir)
 	}
 
-	os.RemoveAll(tempProcessingBaseDir)
-
 	csvWriter.Flush()
 	fmt.Println("\n--------------------------------------")
 	fmt.Printf("Crops saved in: %s\n", finalCropsDir)
@@ -371,7 +368,8 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 			crop.Score, _ = strconv.ParseFloat(record[5], 64)
 		}
 		crops = append(crops, crop)
-	}
+	}	
+
 	return crops, nil
 }
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -e 
 
-CUSTOM_IMAGE_PATH="$1"
+IMAGE_PATH="$1"
 
-if [ -n "$CUSTOM_IMAGE_PATH" ]; then
-    if [ -d "$CUSTOM_IMAGE_PATH" ]; then
-        CUSTOM_IMAGE_PATH="$(cd "$CUSTOM_IMAGE_PATH" && pwd)"
+if [ -n "$IMAGE_PATH" ]; then
+    if [ -d "$IMAGE_PATH" ]; then
+        IMAGE_PATH="$(cd "$IMAGE_PATH" && pwd)"
     else
-        echo "Error: Provided path '$CUSTOM_IMAGE_PATH' is not a valid directory."
+        echo "Error: Provided path '$IMAGE_PATH' is not a valid directory."
         exit 1
     fi
 fi
@@ -82,11 +82,11 @@ open_folder() {
     fi
 }
 
-if [ -n "$CUSTOM_IMAGE_PATH" ]; then
-    echo "Using image path: $CUSTOM_IMAGE_PATH"
+if [ -n "$IMAGE_PATH" ]; then
+    echo "Using image path: $IMAGE_PATH"
     echo ""
     cd main
-    ./orchestrator -data "$CUSTOM_IMAGE_PATH"
+    ./orchestrator -data "$IMAGE_PATH"
 else
     IMAGE_DIR="data/paintings"
     mkdir -p "$IMAGE_DIR"

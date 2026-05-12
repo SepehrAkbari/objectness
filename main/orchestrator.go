@@ -14,7 +14,7 @@ import (
 
 	"image"
 	"image/jpeg"
-	_ "image/png"  // PNG dedoding support (not actually needed for our paintings)
+	_"image/png"
 	"math/rand"
 	"time"
 )
@@ -25,12 +25,13 @@ const lowSaliencyCropTargetWidth = 224
 const lowSaliencyCropTargetHeight = 224
 
 var (
-	paintingsDir = "../images/paintings"
+	// dataDir = "../images/paintings"
+	dataDir = "../images/testing"
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
 	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
 	frcnnScriptPath = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
-	frcnnPythonVenvPath = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python")
+	// frcnnPythonVenvPath = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python")
 	finalOutputDir = "./output"
 	finalCropsDir = filepath.Join(finalOutputDir, "crops")
 	finalCSVFile = filepath.Join(finalOutputDir, "combined_data.csv")
@@ -154,8 +155,8 @@ func main() {
 	}
 	csvWriter.Flush()
 
-	log.Printf("Orchestrator: Processing paintings from %s\n", paintingsDir)
-	entries, err := os.ReadDir(paintingsDir)
+	log.Printf("Orchestrator: Processing paintings from %s\n", dataDir)
+	entries, err := os.ReadDir(dataDir)
 	if err != nil {
 		log.Fatalf("Error reading paintings directory: %v", err)
 	}
@@ -169,7 +170,7 @@ func main() {
 			continue
 		}
 
-		paintingPath := filepath.Join(paintingsDir, paintingFilename)
+		paintingPath := filepath.Join(dataDir, paintingFilename)
 		paintingBaseFilename := strings.TrimSuffix(paintingFilename, filepath.Ext(paintingFilename))
 		log.Printf("Orchestrator: Processing painting: %s\n", paintingFilename)
 
@@ -187,7 +188,9 @@ func main() {
 
 		// FRCNN PART
 		log.Printf("  Orchestrator: Running FRCNN for %s...\n", paintingFilename)
-		cmdFRCNN := exec.Command(frcnnPythonVenvPath, frcnnScriptPath, paintingPath, currentTempDir)
+		
+		cmdFRCNN := exec.Command("python", frcnnScriptPath, paintingPath, currentTempDir)
+		
 		frcnnStdOut, err := cmdFRCNN.Output()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {

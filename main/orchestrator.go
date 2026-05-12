@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -23,7 +24,7 @@ const lowSaliencyCropTargetWidth = 224
 const lowSaliencyCropTargetHeight = 224
 
 var (
-	dataDir = "../data/testing"
+	dataDir string
 
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
@@ -138,6 +139,9 @@ func generateAndSaveLowSaliencyCrop(
 }
 
 func main() {
+	flag.StringVar(&dataDir, "data", "../data/paintings", "Path to the directory containing images to process")
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
 
 	if err := os.MkdirAll(finalCropsDir, 0755); err != nil {
@@ -165,7 +169,7 @@ func main() {
 
 	entries, err := os.ReadDir(dataDir)
 	if err != nil {
-		fmt.Printf("Error reading data directory: %v\n", err)
+		fmt.Printf("Error reading data directory (%s): %v\n", dataDir, err)
 		os.Exit(1)
 	}
 
@@ -181,7 +185,12 @@ func main() {
 	}
 	totalImages := len(validImages)
 
-	fmt.Printf("\nProcessing images from %s\n", dataDir)
+	if totalImages == 0 {
+		fmt.Printf("\nNo valid images found in %s to process.\n", dataDir)
+		os.Exit(0)
+	}
+
+	fmt.Printf("\nProcessing %d images from %s\n", totalImages, dataDir)
 
 	for idx, entry := range validImages {
 		imageFilename := entry.Name()

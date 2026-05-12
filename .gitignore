@@ -1,7 +1,6 @@
 .vscode
 .venv
 venv
-venv_main_frcnn
 
 data/paintings
 data/crops
@@ -22,9 +21,7 @@ method_DeepLearning/output/log.txt
 main/output/crops/
 main/temp_processing/*
 main/output_crops/
-
 main/orchestrator
-
 
 CMakeCache.txt
 BingCropperSingle

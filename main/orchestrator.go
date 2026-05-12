@@ -1,42 +1,47 @@
 package main
 
 import (
-	// "bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
-
 	"image"
 	"image/jpeg"
-	_"image/png"
+	_ "image/png"
 	"math/rand"
 	"time"
+	"runtime"
 )
 
-const totalCropsPerPainting = 20
+const totalCropsPerImage = 20
 const numLowSaliencyCrops = 5
 const lowSaliencyCropTargetWidth = 224
 const lowSaliencyCropTargetHeight = 224
 
 var (
-	// dataDir = "../images/paintings"
-	dataDir = "../images/testing"
+	dataDir = "../data/paintings"
 	bingProcessorDir = "./bing_processor"
 	frcnnProcessorDir = "./frcnn_processor"
 	bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
 	frcnnScriptPath = filepath.Join(frcnnProcessorDir, "src", "rp_rcnn_single.py")
-	// frcnnPythonVenvPath = filepath.Join(frcnnProcessorDir, "venv_main_frcnn", "bin", "python")
 	finalOutputDir = "./output"
 	finalCropsDir = filepath.Join(finalOutputDir, "crops")
 	finalCSVFile = filepath.Join(finalOutputDir, "combined_data.csv")
 	tempProcessingBaseDir = "./temp_processing"
+	bingExecutablePath string
 )
+
+func init() {
+	if runtime.GOOS == "windows" {
+		bingExecutablePath = filepath.Join(bingProcessorDir, "build", "Release", "BingCropperSingle.exe")
+	} else {
+		bingExecutablePath = filepath.Join(bingProcessorDir, "build", "BingCropperSingle")
+	}
+}
 
 type CropMeta struct {
 	RelativeCropPath string
@@ -62,7 +67,7 @@ func getImageDimensions(imagePath string) (int, int, error) {
 }
 
 func generateAndSaveLowSaliencyCrop(
-	originalPaintingPath string,
+	originalImagePath string,
 	originalFilename string,
 	cropIdx int,
 	isWrongFile string,
@@ -72,16 +77,16 @@ func generateAndSaveLowSaliencyCrop(
 	finalCropFilename := fmt.Sprintf("%s_lowsaliency_crop%d.jpg", strings.TrimSuffix(originalFilename, filepath.Ext(originalFilename)), cropIdx)
 	destCropPath := filepath.Join(finalCropsDir, finalCropFilename)
 
-	srcFile, err := os.Open(originalPaintingPath)
+	srcFile, err := os.Open(originalImagePath)
 	if err != nil {
-		log.Printf("  Error opening original painting %s for low-saliency crop: %v\n", originalPaintingPath, err)
+		fmt.Printf("  [Error] Opening original image %s for low-saliency crop: %v\n", originalImagePath, err)
 		return err
 	}
 	defer srcFile.Close()
 
 	img, _, err := image.Decode(srcFile)
 	if err != nil {
-		log.Printf("  Error decoding image %s for low-saliency crop: %v\n", originalPaintingPath, err)
+		fmt.Printf("  [Error] Decoding image %s for low-saliency crop: %v\n", originalImagePath, err)
 		return err
 	}
 
@@ -92,21 +97,21 @@ func generateAndSaveLowSaliencyCrop(
 	}
 	subImg, ok := img.(subImager)
 	if !ok {
-		log.Printf("  Error: image type does not support SubImage for %s\n", originalPaintingPath)
+		fmt.Printf("  [Error] Image type does not support SubImage for %s\n", originalImagePath)
 		return fmt.Errorf("image type does not support SubImage")
 	}
 	croppedImage := subImg.SubImage(cropRect)
 
 	destFile, err := os.Create(destCropPath)
 	if err != nil {
-		log.Printf("  Error creating dest file %s for low-saliency crop: %v\n", destCropPath, err)
+		fmt.Printf("  [Error] Creating dest file %s for low-saliency crop: %v\n", destCropPath, err)
 		return err
 	}
 	defer destFile.Close()
 
 	err = jpeg.Encode(destFile, croppedImage, &jpeg.Options{Quality: 90})
 	if err != nil {
-		log.Printf("  Error encoding/saving low-saliency crop %s: %v\n", destCropPath, err)
+		fmt.Printf("  [Error] Encoding/saving low-saliency crop %s: %v\n", destCropPath, err)
 		return err
 	}
 
@@ -125,108 +130,114 @@ func generateAndSaveLowSaliencyCrop(
 		"FALSE",
 	}
 	if err := csvWriter.Write(csvRecord); err != nil {
-		log.Printf("  Error writing record to final CSV for low-saliency crop %s: %v\n", originalFilename, err)
+		fmt.Printf("  [Error] Writing record to final CSV for low-saliency crop %s: %v\n", originalFilename, err)
 		return err
 	}
 	return nil
 }
 
-
 func main() {
-	log.Println("Orchestrator (Go): Starting...")
 	rand.Seed(time.Now().UnixNano())
 
 	if err := os.MkdirAll(finalCropsDir, 0755); err != nil {
-		log.Fatalf("Error creating final crops directory: %v", err)
+		fmt.Printf("Error creating final crops directory: %v\n", err)
+		os.Exit(1)
 	}
 	if err := os.MkdirAll(tempProcessingBaseDir, 0755); err != nil {
-		log.Fatalf("Error creating temp base directory: %v", err)
+		fmt.Printf("Error creating temp base directory: %v\n", err)
+		os.Exit(1)
 	}
 
 	csvFile, err := os.Create(finalCSVFile)
 	if err != nil {
-		log.Fatalf("Error creating final CSV file: %v", err)
+		fmt.Printf("Error creating final CSV file: %v\n", err)
+		os.Exit(1)
 	}
 	defer csvFile.Close()
 	csvWriter := csv.NewWriter(csvFile)
 	header := []string{"original_filename", "crop_idx", "top_left_x", "top_left_y", "top_right_x", "top_right_y", "bottom_left_x", "bottom_left_y", "bottom_right_x", "bottom_right_y", "WRONG_file", "FRCNN_source", "BING_source"}
 	if err := csvWriter.Write(header); err != nil {
-		log.Fatalf("Error writing CSV header: %v", err)
+		fmt.Printf("Error writing CSV header: %v\n", err)
+		os.Exit(1)
 	}
 	csvWriter.Flush()
 
-	log.Printf("Orchestrator: Processing paintings from %s\n", dataDir)
 	entries, err := os.ReadDir(dataDir)
 	if err != nil {
-		log.Fatalf("Error reading paintings directory: %v", err)
+		fmt.Printf("Error reading data directory: %v\n", err)
+		os.Exit(1)
 	}
 
+	var validImages []os.DirEntry
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		paintingFilename := entry.Name()
-		if !(strings.HasSuffix(strings.ToLower(paintingFilename), ".jpg") || strings.HasSuffix(strings.ToLower(paintingFilename), ".jpeg") || strings.HasSuffix(strings.ToLower(paintingFilename), ".png")) {
-			continue
+		filename := strings.ToLower(entry.Name())
+		if strings.HasSuffix(filename, ".jpg") || strings.HasSuffix(filename, ".jpeg") || strings.HasSuffix(filename, ".png") {
+			validImages = append(validImages, entry)
 		}
+	}
+	totalImages := len(validImages)
 
-		paintingPath := filepath.Join(dataDir, paintingFilename)
-		paintingBaseFilename := strings.TrimSuffix(paintingFilename, filepath.Ext(paintingFilename))
-		log.Printf("Orchestrator: Processing painting: %s\n", paintingFilename)
+	fmt.Printf("\nProcessing images from %s\n", dataDir)
 
-		currentTempDir := filepath.Join(tempProcessingBaseDir, paintingBaseFilename+"_temp")
+	for idx, entry := range validImages {
+		imageFilename := entry.Name()
+		imagePath := filepath.Join(dataDir, imageFilename)
+		imageBaseFilename := strings.TrimSuffix(imageFilename, filepath.Ext(imageFilename))
+
+		fmt.Printf("\nProcessing %s (%d/%d)\n", imageFilename, idx+1, totalImages)
+
+		currentTempDir := filepath.Join(tempProcessingBaseDir, imageBaseFilename+"_temp")
 		if err := os.MkdirAll(filepath.Join(currentTempDir, "crops"), 0755); err != nil {
-			log.Printf("  Error creating temp dir for %s: %v. Skipping.\n", paintingFilename, err)
+			fmt.Printf("  [Error] Creating temp dir for %s: %v. Skipping.\n", imageFilename, err)
 			continue
 		}
-		defer os.RemoveAll(currentTempDir)
 
 		isWrongFile := "FALSE"
-		if strings.Contains(strings.ToUpper(paintingFilename), "_WRONG") {
+		if strings.Contains(strings.ToUpper(imageFilename), "_WRONG") {
 			isWrongFile = "TRUE"
 		}
 
 		// FRCNN PART
-		log.Printf("  Orchestrator: Running FRCNN for %s...\n", paintingFilename)
-		
-		cmdFRCNN := exec.Command("uv", "run", "python", frcnnScriptPath, paintingPath, currentTempDir)
-		
+		cmdFRCNN := exec.Command("uv", "run", "python", frcnnScriptPath, imagePath, currentTempDir)
 		frcnnStdOut, err := cmdFRCNN.Output()
 		if err != nil {
 			if exitErr, ok := err.(*exec.ExitError); ok {
-				log.Printf("  FRCNN script for %s exited with error: %v. Stderr: %s\n", paintingFilename, err, string(exitErr.Stderr))
+				fmt.Printf("  [Warning] FRCNN script exited with error. Stderr: %s\n", string(exitErr.Stderr))
 			} else {
-				log.Printf("  Error running FRCNN script for %s: %v\n", paintingFilename, err)
+				fmt.Printf("  [Warning] Error running FRCNN script: %v\n", err)
 			}
 			frcnnStdOut = []byte("0")
 		}
 
 		numFRCNNProposals, convErr := strconv.Atoi(strings.TrimSpace(string(frcnnStdOut)))
 		if convErr != nil {
-			log.Printf("  Warning: FRCNN script for %s returned non-integer proposal count: '%s'. Assuming 0. Error: %v\n", paintingFilename, string(frcnnStdOut), convErr)
 			numFRCNNProposals = 0
 		}
-		log.Printf("  Orchestrator: FRCNN generated %d proposals for %s.\n", numFRCNNProposals, paintingFilename)
+		
+		fmt.Printf("  FRCNN generated %d proposals for %s\n", numFRCNNProposals, imageFilename)
 
 		finalCropIdxCounter := 0
-
 		numToTakeFromFRCNN := 0
-		if numFRCNNProposals >= totalCropsPerPainting {
-			numToTakeFromFRCNN = totalCropsPerPainting
+		
+		if numFRCNNProposals >= totalCropsPerImage {
+			numToTakeFromFRCNN = totalCropsPerImage
 		} else if numFRCNNProposals > 0 {
 			numToTakeFromFRCNN = numFRCNNProposals
 		}
 
 		frcnnMetaPath := filepath.Join(currentTempDir, "frcnn_meta.csv")
 		if numToTakeFromFRCNN > 0 {
-			log.Printf("  Orchestrator: Taking top %d proposals from FRCNN for %s.\n", numToTakeFromFRCNN, paintingFilename)
+			fmt.Printf("  Taking top %d proposals from FRCNN for %s\n", numToTakeFromFRCNN, imageFilename)
 			frcnnCrops, err := readTempMetaCSV(frcnnMetaPath, true)
 			if err != nil {
-				log.Printf("  Warning: Could not read FRCNN meta CSV for %s: %v. Skipping FRCNN crops.\n", paintingFilename, err)
+				fmt.Printf("  [Warning] Could not read FRCNN meta CSV: %v\n", err)
 			} else {
 				for i := 0; i < len(frcnnCrops) && i < numToTakeFromFRCNN; i++ {
 					crop := frcnnCrops[i]
-					if err := processAndSaveCrop(paintingFilename, finalCropIdxCounter, isWrongFile, crop, currentTempDir, "TRUE", "FALSE", csvWriter); err == nil {
+					if err := processAndSaveCrop(imageFilename, finalCropIdxCounter, isWrongFile, crop, currentTempDir, "TRUE", "FALSE", csvWriter); err == nil {
 						finalCropIdxCounter++
 					}
 				}
@@ -235,99 +246,82 @@ func main() {
 		csvWriter.Flush()
 
 		// BING PART
-		numBingNeeded := totalCropsPerPainting - finalCropIdxCounter
+		numBingNeeded := totalCropsPerImage - finalCropIdxCounter
 		if numBingNeeded < 0 {
 			numBingNeeded = 0
 		}
 
 		if numBingNeeded > 0 {
-			log.Printf("  Orchestrator: Running BING for %d proposals for %s...\n", numBingNeeded, paintingFilename)
-			
 			absBingExecutablePath, _ := filepath.Abs(bingExecutablePath)
-			absPaintingPath, _ := filepath.Abs(paintingPath)
+			absImagePath, _ := filepath.Abs(imagePath)
 			absCurrentTempDir, _ := filepath.Abs(currentTempDir)
 
-			cmdBING := exec.Command(absBingExecutablePath, absPaintingPath, strconv.Itoa(numBingNeeded), absCurrentTempDir)
+			cmdBING := exec.Command(absBingExecutablePath, absImagePath, strconv.Itoa(numBingNeeded), absCurrentTempDir)
 			cmdBING.Dir = filepath.Dir(absBingExecutablePath)
 
-			log.Printf("  Orchestrator: Executing BING: %s in CWD: %s\n", strings.Join(cmdBING.Args, " "), cmdBING.Dir)
-
-			bingCombinedOutput, err := cmdBING.CombinedOutput()
-			
-			log.Printf("  Raw BING Process Output for %s (length %d):\n---BEGIN BING STDERR/STDOUT---\n%s\n---END BING STDERR/STDOUT---\n",
-				paintingFilename, len(bingCombinedOutput), string(bingCombinedOutput))
-
+			_, err := cmdBING.CombinedOutput()
 			if err != nil {
-				log.Printf("  Error status from BING executable for %s: %v.\n", paintingFilename, err)
+				fmt.Printf("  [Warning] Error status from BING executable: %v\n", err)
 			}
 
 			bingMetaPath := filepath.Join(currentTempDir, "bing_meta.csv")
-			if _, statErr := os.Stat(bingMetaPath); os.IsNotExist(statErr) {
-				log.Printf("  Warning: BING meta file NOT FOUND for %s at %s (BING might have failed before creating it or crashed)\n", paintingFilename, bingMetaPath)
-			} else {
-				log.Printf("  Orchestrator: Attempting to take %d proposals from BING for %s from %s.\n", numBingNeeded, paintingFilename, bingMetaPath)
+			if _, statErr := os.Stat(bingMetaPath); !os.IsNotExist(statErr) {
 				bingCrops, errRead := readTempMetaCSV(bingMetaPath, false)
-				if errRead != nil {
-					log.Printf("  Warning: Could not read BING meta CSV for %s: %v. Skipping BING crops.\n", paintingFilename, errRead)
-				} else {
-					log.Printf("  Orchestrator: Read %d crop entries from BING meta file for %s.\n", len(bingCrops), paintingFilename)
+				if errRead == nil {
 					processedBingCount := 0
 					for i := 0; i < len(bingCrops) && processedBingCount < numBingNeeded; i++ {
 						crop := bingCrops[i]
-						if err := processAndSaveCrop(paintingFilename, finalCropIdxCounter, isWrongFile, crop, currentTempDir, "FALSE", "TRUE", csvWriter); err == nil {
+						if err := processAndSaveCrop(imageFilename, finalCropIdxCounter, isWrongFile, crop, currentTempDir, "FALSE", "TRUE", csvWriter); err == nil {
 							finalCropIdxCounter++
 							processedBingCount++
 						}
 					}
-					log.Printf("  Orchestrator: Added %d crops from BING for %s.\n", processedBingCount, paintingFilename)
+					fmt.Printf("  BING took %d proposals for %s\n", processedBingCount, imageFilename)
 				}
+			} else {
+				fmt.Printf("  [Warning] BING meta file NOT FOUND.\n")
 			}
 		}
 		csvWriter.Flush()
 
 		// LOW-SALIENCY PART
-		log.Printf("  Orchestrator: Generating %d low-saliency crops for %s...\n", numLowSaliencyCrops, paintingFilename)
-		imgWidth, imgHeight, errDim := getImageDimensions(paintingPath)
-		if errDim != nil {
-			log.Printf("  Warning: Could not get dimensions for %s: %v. Skipping low-saliency crops.\n", paintingFilename, errDim)
-		} else {
-			if imgWidth < lowSaliencyCropTargetWidth || imgHeight < lowSaliencyCropTargetHeight {
-				log.Printf("  Warning: Image %s is smaller (%dx%d) than target low-saliency crop size (%dx%d). Skipping low-saliency crops.\n",
-					paintingFilename, imgWidth, imgHeight, lowSaliencyCropTargetWidth, lowSaliencyCropTargetHeight)
-			} else {
-				generatedLowSaliencyCount := 0
-				for i := 0; i < numLowSaliencyCrops; i++ {
-					randX := rand.Intn(imgWidth - lowSaliencyCropTargetWidth + 1)
-					randY := rand.Intn(imgHeight - lowSaliencyCropTargetHeight + 1)
+		imgWidth, imgHeight, errDim := getImageDimensions(imagePath)
+		if errDim == nil && imgWidth >= lowSaliencyCropTargetWidth && imgHeight >= lowSaliencyCropTargetHeight {
+			generatedLowSaliencyCount := 0
+			for i := 0; i < numLowSaliencyCrops; i++ {
+				randX := rand.Intn(imgWidth - lowSaliencyCropTargetWidth + 1)
+				randY := rand.Intn(imgHeight - lowSaliencyCropTargetHeight + 1)
 
-					errCrop := generateAndSaveLowSaliencyCrop(
-						paintingPath,
-						paintingFilename,
-						finalCropIdxCounter,
-						isWrongFile,
-						randX, randY, lowSaliencyCropTargetWidth, lowSaliencyCropTargetHeight,
-						csvWriter,
-					)
-					if errCrop == nil {
-						finalCropIdxCounter++
-						generatedLowSaliencyCount++
-					} else {
-						log.Printf("  Failed to generate/save low-saliency crop #%d for %s: %v\n", i+1, paintingFilename, errCrop)
-					}
+				errCrop := generateAndSaveLowSaliencyCrop(
+					imagePath,
+					imageFilename,
+					finalCropIdxCounter,
+					isWrongFile,
+					randX, randY, lowSaliencyCropTargetWidth, lowSaliencyCropTargetHeight,
+					csvWriter,
+				)
+				if errCrop == nil {
+					finalCropIdxCounter++
+					generatedLowSaliencyCount++
 				}
-				log.Printf("  Orchestrator: Added %d low-saliency crops for %s.\n", generatedLowSaliencyCount, paintingFilename)
 			}
+			fmt.Printf("  Added %d low-saliency crops for %s\n", generatedLowSaliencyCount, imageFilename)
+		} else if errDim != nil {
+			fmt.Printf("  [Warning] Could not get dimensions: %v\n", errDim)
+		} else {
+			fmt.Printf("  [Warning] Image is too small for low-saliency target size.\n")
 		}
+		
 		csvWriter.Flush()
-
-
-		log.Printf("  Orchestrator: Finished %s. Total crops generated for this image: %d\n", paintingFilename, finalCropIdxCounter)
-		log.Println("--------------------------------------")
+		fmt.Printf("  Total crops for %s: %d\n", imageFilename, finalCropIdxCounter)
+		
+		os.RemoveAll(currentTempDir)
 	}
+
 	csvWriter.Flush()
-	log.Println("Orchestration complete!")
-	log.Printf("Final combined crops are in: %s\n", finalCropsDir)
-	log.Printf("Final combined CSV is at: %s\n", finalCSVFile)
+	fmt.Println("\n--------------------------------------")
+	fmt.Printf("Crops saved in: %s\n", finalCropsDir)
+	fmt.Printf("CSV saved at: %s\n", finalCSVFile)
 }
 
 func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
@@ -353,7 +347,6 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 			break
 		}
 		if err != nil {
-			log.Printf("Warning: Malformed line in %s: %v (line: %s)", filePath, err, strings.Join(record, ","))
 			continue
 		}
 
@@ -362,10 +355,9 @@ func readTempMetaCSV(filePath string, hasScore bool) ([]CropMeta, error) {
 			expectedCols = 6
 		}
 		if len(record) < expectedCols {
-			log.Printf("Warning: Insufficient columns in line from %s: expected %d, got %d (line: %s)", filePath, expectedCols, len(record), strings.Join(record, ","))
 			continue
 		}
-		
+
 		var crop CropMeta
 		crop.RelativeCropPath = record[0]
 		crop.X, _ = strconv.Atoi(record[1])
@@ -396,21 +388,18 @@ func processAndSaveCrop(
 
 	sourceFile, err := os.Open(sourceCropPath)
 	if err != nil {
-		log.Printf("  Error opening source crop %s: %v\n", sourceCropPath, err)
 		return err
 	}
 	defer sourceFile.Close()
 
 	destFile, err := os.Create(destCropPath)
 	if err != nil {
-		log.Printf("  Error creating dest crop %s: %v\n", destCropPath, err)
 		return err
 	}
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, sourceFile)
 	if err != nil {
-		log.Printf("  Error copying crop from %s to %s: %v\n", sourceCropPath, destCropPath, err)
 		return err
 	}
 
@@ -429,7 +418,6 @@ func processAndSaveCrop(
 		isBINGSource,
 	}
 	if err := csvWriter.Write(csvRecord); err != nil {
-		log.Printf("  Error writing record to final CSV for %s: %v\n", originalFilename, err)
 		return err
 	}
 	return nil

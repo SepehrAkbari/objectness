@@ -3,10 +3,10 @@
 venv
 venv_main_frcnn
 
-images/paintings
-images/crops
-images/poster/
-images/combined_data.csv
+data/paintings
+data/crops
+data/poster/
+data/combined_data.csv
 
 method_BING/build/CMakeFiles
 method_BING/build/cmake_install.cmake
@@ -22,6 +22,10 @@ method_DeepLearning/output/log.txt
 main/output/crops/
 main/temp_processing/*
 main/output_crops/
+
+main/orchestrator
+
+
 CMakeCache.txt
 BingCropperSingle
 Makefile

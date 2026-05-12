@@ -10,7 +10,7 @@ To design this module, we use a combination of two methods to detect objects in 
 
 ## Usage
 
-To use the module, make sure you have a version of Python 3.8 or higher, Go-lang, and a C compiler installed, along with the OpenCV saliency module which is included in their full package.
+To use the module, make sure you have a version of Python 3.8 or higher, Go-lang, and a C compiler installed, along with the OpenCV saliency module which is included in their full package. You also need [uv](https://docs.astral.sh/uv/getting-started/) for managing the Python environment.
 
 First, clone the repository:
 
@@ -24,9 +24,8 @@ go mod tidy
 Populate the [images](images) directory with your images, following the structure outlined. Then, install the required dependencies:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv venv
+uv pip install -r requirements.txt
 ```
 
 First compile the BING source code:
@@ -34,13 +33,14 @@ First compile the BING source code:
 ```bash
 cd main/bing_processor/build
 cmake ../src
-make
-cd ../..
+cmake --build .
+cd ../../..
 ```
 
 You can then build and run the orchestrator script to process the images:
 
 ```bash
+cd main
 go build orchestrator.go
 ./orchestrator
 ```

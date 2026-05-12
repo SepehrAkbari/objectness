@@ -189,7 +189,7 @@ func main() {
 		// FRCNN PART
 		log.Printf("  Orchestrator: Running FRCNN for %s...\n", paintingFilename)
 		
-		cmdFRCNN := exec.Command("python", frcnnScriptPath, paintingPath, currentTempDir)
+		cmdFRCNN := exec.Command("uv", "run", "python", frcnnScriptPath, paintingPath, currentTempDir)
 		
 		frcnnStdOut, err := cmdFRCNN.Output()
 		if err != nil {
